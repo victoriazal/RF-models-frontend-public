@@ -1060,66 +1060,70 @@ $(function(){
 let pageSize = 16; 
 let currentCategory = '';
 
-	function fetchAndRenderModels() {
-	  const params = new URLSearchParams({
-			gender: currentGender,
-			count: pageSize,
-			char: currentChar,
-			input: currentInput,
-			page: currentPage,
-		});
-		if (currentCategory) params.append('category', currentCategory);
-		fetch(`${api}?${params}`)
-			.then(res => res.json())
-			.then(data => {
-				container.innerHTML = '';
-				data.forEach(model => {
-					const card = document.createElement('div');
-					card.className = 'card';
-					card.innerHTML = `
-						<div class="card__inner">
-							<div class="card__photo">
-								<img src="${mediaApi}/picture/${model.ico}" alt="${model.fullname}">
-							</div>
-							<div class="card__info">
-								<div class="card__params">
-									<div class="card__param"><div class="card__param-label">size</div>${model.measurements?.shoes || '-'}</div>
-									<div class="card__param"><div class="card__param-label">height</div>${model.measurements?.height || '-'}</div>
-									<div class="card__param"><div class="card__param-label">bust</div>${model.measurements?.bust || '-'}</div>
-									<div class="card__param"><div class="card__param-label">waist</div>${model.measurements?.waist || '-'}</div>
-									<div class="card__param"><div class="card__param-label">hips</div>${model.measurements?.hips || '-'}</div>
-								</div>
-								<div class="card__buttons">
-									<a href="detail.html?id=${model.id}" class="btn btn--md btn--wall">
-										<svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#plus"></use></svg>
-										<span>portfolio explore</span>
-									</a>
-								</div>
-								<button class="card__wish" data-open-popup="book-model"></button>
-							</div>
-						</div>
-						<div class="card__name"><span>${model.fullname}</span></div>
-						<a href="detail.html?id=${model.id}" class="card__lopen"></a>
-					`;
-					container.appendChild(card);
-					document.querySelector('.catalog__pagination-pages span').textContent = data.length;
-				});
-				const cards = gsap.utils.toArray('.card');
-				cards.forEach((card, i) => {
-				gsap.from(card, {
-					scrollTrigger: {
-					trigger: card,
-					start: 'top 100%',
-					end: 'top 60%',
-					scrub: true,
-					},
-					yPercent: (20 + i % 4 * 10),
-					opacity: 0.5,
-					ease: "none",
-				});
-				});
-			});
-	}
+function fetchAndRenderModels() {
+  const params = new URLSearchParams({
+    gender: currentGender,
+    count: pageSize,
+    char: currentChar,
+    name: currentInput,
+    skip: currentPage,
+  });
+  if (currentCategory) params.append('category', currentCategory);
+
+  fetch(`${api}?${params}`)
+    .then(res => res.json())
+    .then(data => {
+      // НЕ очищаем container.innerHTML!
+      data.forEach(model => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card__inner">
+            <div class="card__photo">
+              <img src="${mediaApi}/picture/${model.ico}" alt="${model.fullname}">
+            </div>
+            <div class="card__info">
+              <div class="card__params">
+                <div class="card__param"><div class="card__param-label">size</div>${model.measurements?.shoes || '-'}</div>
+                <div class="card__param"><div class="card__param-label">height</div>${model.measurements?.height || '-'}</div>
+                <div class="card__param"><div class="card__param-label">bust</div>${model.measurements?.bust || '-'}</div>
+                <div class="card__param"><div class="card__param-label">waist</div>${model.measurements?.waist || '-'}</div>
+                <div class="card__param"><div class="card__param-label">hips</div>${model.measurements?.hips || '-'}</div>
+              </div>
+              <div class="card__buttons">
+                <a href="detail.html?id=${model.id}" class="btn btn--md btn--wall">
+                  <svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#plus"></use></svg>
+                  <span>portfolio explore</span>
+                </a>
+              </div>
+              <button class="card__wish" data-open-popup="book-model"></button>
+            </div>
+          </div>
+          <div class="card__name"><span>${model.fullname}</span></div>
+          <a href="detail.html?id=${model.id}" class="card__lopen"></a>
+        `;
+        container.appendChild(card);
+      });
+
+      document.querySelector('.catalog__pagination-pages span').textContent = container.children.length;
+
+      const cards = gsap.utils.toArray('.card');
+      cards.forEach((card, i) => {
+        gsap.from(card, {
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 100%',
+            end: 'top 60%',
+            scrub: true,
+          },
+          yPercent: (20 + i % 4 * 10),
+          opacity: 0.5,
+          ease: "none",
+        });
+      });
+    });
+}
+
 	
 	// Клик по букве
 	document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
