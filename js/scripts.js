@@ -1060,6 +1060,8 @@ $(function(){
 let pageSize = 16; 
 let currentCategory = '';
 
+
+
 function fetchAndRenderModels() {
   const params = new URLSearchParams({
     gender: currentGender,
@@ -1078,7 +1080,7 @@ function fetchAndRenderModels() {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-          <div class="card__inner">
+          <div class="card__inner" data-model-id="${model.id}">
             <div class="card__photo">
               <img src="${mediaApi}/picture/${model.ico}" alt="${model.fullname}">
             </div>
@@ -1091,9 +1093,9 @@ function fetchAndRenderModels() {
                 <div class="card__param"><div class="card__param-label">hips</div>${model.measurements?.hips || '-'}</div>
               </div>
               <div class="card__buttons">
-                <a href="detail.html?id=${model.id}" class="btn btn--md btn--wall">
+                <a href="https://admin.rfmodels.ru/website/${model.id}" class="btn btn--md btn--wall">
                   <svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#plus"></use></svg>
-                  <span>portfolio explore</span>
+                  <span >portfolio explore</span>
                 </a>
               </div>
               <button class="card__wish" data-open-popup="book-model"></button>
@@ -1104,6 +1106,7 @@ function fetchAndRenderModels() {
         `;
         container.appendChild(card);
       });
+
 
       document.querySelector('.catalog__pagination-pages span').textContent = container.children.length;
 
@@ -1123,6 +1126,8 @@ function fetchAndRenderModels() {
       });
     });
 }
+
+
 
 	
 	// Клик по букве
