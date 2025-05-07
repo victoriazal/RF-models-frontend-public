@@ -1128,6 +1128,7 @@ function fetchAndRenderModels() {
 	// Клик по букве
 	document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
 		a.addEventListener('click', e => {
+			container.innerHTML = '';
 			e.preventDefault();
 			currentChar = a.textContent.trim();
 			fetchAndRenderModels();
@@ -1144,14 +1145,17 @@ function fetchAndRenderModels() {
 	// Клик по переключателю пола
 	document.querySelectorAll('.js-category-open').forEach(a => {
 		a.addEventListener('click', e => {
+			currentCategory = '';
+			container.innerHTML = '';
 			e.preventDefault();
 			currentGender = a.dataset.category === 'men' ? 'male' : 'female';
 			fetchAndRenderModels();
 		});
 	});
-	
+	// Клик по переключателю категорий
 	document.querySelectorAll('.catalog__action-categ__item a').forEach(a => {
 		a.addEventListener('click', e => {
+			container.innerHTML = '';
 			e.preventDefault();
 			const text = a.textContent.trim().toLowerCase();
 			if (text === 'new faces') currentCategory = 'new';
