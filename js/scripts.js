@@ -230,29 +230,87 @@ $(function(){
 	})
 
 	$('.js-form-valid').submit(function(e) {
-		e.preventDefault();
-		let error = false;
-		const form = $(this);
-		$(form).find('[data-required]').each(function() {
-			if ($(this).val() == '') {
-				console.log($(this));
-				error = true;
-			}
-			if ($(this).attr('type') == 'checkbox' && !$(this).is(':checked')) {
-				console.log($(this));
-				error = true;
-			}
-		})
-		if (error) {
-			$(form).find('.js-form-error').addClass('show');
-			setTimeout(() => {
-				$(form).find('.js-form-error').removeClass('show');
-			}, 2000);
-			return true;
-		}
+    e.preventDefault();
 
-		location.href = 'thank.html';
-	})
+    let error = false;
+    const form = $(this);
+
+    // Validate required fields
+    $(form).find('[data-required]').each(function() {
+        if ($(this).attr('type') === 'checkbox' && !$(this).is(':checked')) {
+            error = true;
+        } else if ($(this).val() === '') {
+            error = true;
+        }
+    });
+
+    if (error) {
+        $(form).find('.js-form-error').addClass('show');
+        setTimeout(() => {
+            $(form).find('.js-form-error').removeClass('show');
+        }, 2000);
+        return false;
+    }
+
+    const woman = form.find('input[name="looking[]"][value="women"]').is(':checked');
+    const man = form.find('input[name="looking[]"][value="men"]').is(':checked');
+    const type = form.find('input[name="photoshoot"]:checked').val() === 'commercial' ? 'commercial' : 'creative';
+    
+
+    const categoriesMap = {
+        'New faces': 'new',
+        'asian': 'asian',
+        'mulatto': 'mulatto',
+        'size+': 'plus'
+    };
+    const categories = [];
+    form.find('input[name="specific[]"]:checked').each(function() {
+        const val = $(this).val();
+        if (categoriesMap[val]) categories.push(categoriesMap[val]);
+    });
+
+
+    let schedule = form.find('input[name="date"]').val();
+    if (schedule) {
+        const parts = schedule.split('.');
+        if (parts.length === 3) {
+            schedule = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+        }
+    }
+
+    const budget = parseInt(form.find('input[name="budget"]').val().replace(/\s+/g, ''), 10) || null;
+    const phone = form.find('input[name="phone"]').val();
+
+    // Build the payload
+    const payload = {
+        woman,
+        man,
+        type,
+        categories,
+        schedule,
+        budget,
+        phone
+    };
+
+    $.ajax({
+        url:`${api}/show/shoot`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(payload),
+        success: function(response) {
+            window.location.href = 'thank.html';
+        },
+        error: function(xhr) {
+            $(form).find('.js-form-error').text('Submission failed, try again.').addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 2000);
+        }
+    });
+
+    return false;
+});
+
 	
 	// jQuery.validator.addMethod(
 	// 	"phones", 
@@ -1050,7 +1108,7 @@ $(function(){
 
 
 
-	const api = "https://api.rfmodels.ru/api/show/models";
+	const api = "https://api.rfmodels.ru/api";
 	const mediaApi = "https://api.rfmodels.ru/media";
 	const container = document.querySelector('.catalog__items');
 	let currentChar = 'A';
@@ -1061,8 +1119,29 @@ let pageSize = 16;
 let currentCategory = '';
 
 
-
 function fetchAndRenderModels() {
+  fetch(`${api}/show/models/alphabet/gender=${currentGender}`)
+    .then(res => res.json())
+    .then(alphabetData => {
+      console.log('alphabet:', alphabetData);
+
+      // Создаём мапу для быстрого поиска
+      const alphabetMap = {};
+      alphabetData.forEach(item => {
+        alphabetMap[item.char] = item.count;
+      });
+
+      // Проходим по всем буквам и дизейблим если нет или < 16
+      document.querySelectorAll('.catalog__action-letters a').forEach(a => {
+        const letter = a.textContent.trim().toUpperCase();
+        if (!alphabetMap[letter] || alphabetMap[letter] < 16) {
+          a.classList.add('disabled');
+        } else {
+          a.classList.remove('disabled');
+        }
+      });
+    });
+
   const params = new URLSearchParams({
     gender: currentGender,
     count: pageSize,
@@ -1072,7 +1151,7 @@ function fetchAndRenderModels() {
   });
   if (currentCategory) params.append('category', currentCategory);
 
-  fetch(`${api}?${params}`)
+  fetch(`${api}/show/models?${params}`)
     .then(res => res.json())
     .then(data => {
       // НЕ очищаем container.innerHTML!
@@ -1092,10 +1171,10 @@ function fetchAndRenderModels() {
                 <div class="card__param"><div class="card__param-label">waist</div>${model.measurements?.waist || '-'}</div>
                 <div class="card__param"><div class="card__param-label">hips</div>${model.measurements?.hips || '-'}</div>
               </div>
-              <div class="card__buttons">
+                     <div class="card__buttons">
                 <a href="https://admin.rfmodels.ru/website/${model.id}" class="btn btn--md btn--wall">
                   <svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#plus"></use></svg>
-                  <span >portfolio explore</span>
+                  <span>portfolio explore</span>
                 </a>
               </div>
               <button class="card__wish" data-open-popup="book-model"></button>
@@ -1106,7 +1185,6 @@ function fetchAndRenderModels() {
         `;
         container.appendChild(card);
       });
-
 
       document.querySelector('.catalog__pagination-pages span').textContent = container.children.length;
 
