@@ -1120,18 +1120,14 @@ let currentCategory = '';
 
 
 function fetchAndRenderModels() {
-  fetch(`${api}/show/models/alphabet/gender=${currentGender}`)
+  fetch(`${api}/show/models/alphabet/${currentGender==='female' ? 'woman' : 'man'}`)
     .then(res => res.json())
     .then(alphabetData => {
-      console.log('alphabet:', alphabetData);
-
-      // Создаём мапу для быстрого поиска
       const alphabetMap = {};
       alphabetData.forEach(item => {
         alphabetMap[item.char] = item.count;
       });
 
-      // Проходим по всем буквам и дизейблим если нет или < 16
       document.querySelectorAll('.catalog__action-letters a').forEach(a => {
         const letter = a.textContent.trim().toUpperCase();
         if (!alphabetMap[letter] || alphabetMap[letter] < 16) {
@@ -1142,6 +1138,18 @@ function fetchAndRenderModels() {
       });
     });
 
+document.querySelectorAll('.catalog__action-letters a').forEach(a => {
+    a.replaceWith(a.cloneNode(true));
+});
+
+document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
+    a.addEventListener('click', e => {
+        container.innerHTML = '';
+        e.preventDefault();
+        currentChar = a.textContent.trim();
+        fetchAndRenderModels();
+    });
+});
   const params = new URLSearchParams({
     gender: currentGender,
     count: pageSize,
@@ -1154,7 +1162,7 @@ function fetchAndRenderModels() {
   fetch(`${api}/show/models?${params}`)
     .then(res => res.json())
     .then(data => {
-      // НЕ очищаем container.innerHTML!
+			container.innerHTML = '';
       data.forEach(model => {
         const card = document.createElement('div');
         card.className = 'card';
@@ -1205,10 +1213,7 @@ function fetchAndRenderModels() {
     });
 }
 
-
-
-	
-	// Клик по букве
+//жмак по букве
 	document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
 		a.addEventListener('click', e => {
 			container.innerHTML = '';
