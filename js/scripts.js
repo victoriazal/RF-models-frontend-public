@@ -1189,13 +1189,21 @@ document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a
             </div>
           </div>
           <div class="card__name"><span>${model.fullname}</span></div>
-          <a href="detail.html?id=${model.id}" class="card__lopen"></a>
+          <a href="https://admin.rfmodels.ru/website/${model.id}" class="card__lopen"></a>
         `;
         container.appendChild(card);
       });
 
       document.querySelector('.catalog__pagination-pages span').textContent = container.children.length;
-
+    container.querySelectorAll('.card__inner[data-model-id]').forEach(cardInner => {
+      cardInner.addEventListener('click', function(e) {
+        // Если клик по wish-кнопке — ничего не делаем
+        if (e.target.closest('.card__wish')) return;
+        // Берём id из data-атрибута
+        const modelId = cardInner.getAttribute('data-model-id');
+        window.location.href = `https://admin.rfmodels.ru/website/${modelId}`;
+      });
+    });
       const cards = gsap.utils.toArray('.card');
       cards.forEach((card, i) => {
         gsap.from(card, {

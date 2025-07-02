@@ -3477,10 +3477,11 @@ footer
 .card__inner {
   position: relative;
   margin-bottom: 1.25vw;
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 .card__photo {
+  cursor: pointer;
   position: relative;
   padding-bottom: 137%;
 }
@@ -6977,6 +6978,7 @@ footer
 
   .card__inner {
     margin-bottom: 15px;
+    cursor: pointer;
   }
 
   .card__name {
@@ -9165,6 +9167,7 @@ footer
 
   .card__inner {
     margin-bottom: 10px;
+    cursor: pointer;
   }
 
   .card__name {
