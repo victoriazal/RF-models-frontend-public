@@ -1120,7 +1120,7 @@ let currentCategory = '';
 
 
 function fetchAndRenderModels() {
-  fetch(`${api}/show/models/alphabet/${currentGender==='female' ? 'woman' : 'man'}`)
+  fetch(`${api}/show/models/${currentGender==='female' ? 'woman' : 'man'}`)
     .then(res => res.json())
     .then(alphabetData => {
       const alphabetMap = {};
@@ -1138,32 +1138,49 @@ function fetchAndRenderModels() {
       });
     });
 
-document.querySelectorAll('.catalog__action-letters a').forEach(a => {
-    a.replaceWith(a.cloneNode(true));
-});
-
-document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
-    a.addEventListener('click', e => {
-        container.innerHTML = '';
-        e.preventDefault();
-        currentChar = a.textContent.trim();
-        fetchAndRenderModels();
-    });
-});
   const params = new URLSearchParams({
-    gender: currentGender,
-    count: pageSize,
-    char: currentChar,
-    name: currentInput,
-    skip: currentPage,
+	gender: currentGender,
+	count: pageSize,
+	// char: currentChar,
+	skip: currentPage
   });
+	if (currentChar) params.append('char', currentChar);
   if (currentCategory) params.append('category', currentCategory);
-
+	if (currentInput) params.append('name', currentInput);
   fetch(`${api}/show/models?${params}`)
     .then(res => res.json())
     .then(data => {
+			
 			container.innerHTML = '';
-      data.forEach(model => {
+			      const categoriesContainer = document.querySelector('.catalog__action-categ');
+      if (categoriesContainer && data.categories) {
+        categoriesContainer.innerHTML = '';
+        data.categories.forEach(category => {
+          const categoryItem = document.createElement('div');
+          categoryItem.className = 'catalog__action-categ__item';
+          categoryItem.innerHTML = `<a href="#" class="">${category.title.toUpperCase()}</a>`;
+          categoriesContainer.appendChild(categoryItem);
+        });
+
+        // Навешиваем обработчики на новые категории
+        categoriesContainer.querySelectorAll('a').forEach(a => {
+          a.addEventListener('click', e => {
+            container.innerHTML = '';
+            e.preventDefault();
+            const text = a.textContent.trim().toLowerCase();
+            
+            // Находим соответствующую категорию в данных
+            const foundCategory = data.categories.find(cat => 
+              cat.title.toLowerCase() === text
+            );
+            
+            currentCategory = foundCategory ? foundCategory.query : '';
+            currentPage = 1;
+            fetchAndRenderModels();
+          });
+        });
+      }
+      data.models.forEach(model => {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
@@ -1193,17 +1210,10 @@ document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a
         `;
         container.appendChild(card);
       });
-
-      document.querySelector('.catalog__pagination-pages span').textContent = container.children.length;
-    container.querySelectorAll('.card__inner[data-model-id]').forEach(cardInner => {
-      cardInner.addEventListener('click', function(e) {
-        // Если клик по wish-кнопке — ничего не делаем
-        if (e.target.closest('.card__wish')) return;
-        // Берём id из data-атрибута
-        const modelId = cardInner.getAttribute('data-model-id');
-        window.location.href = `https://admin.rfmodels.ru/website/${modelId}`;
+      const alphabetMap = {};
+      data.alphabet.forEach(item => {
+        alphabetMap[item.char] = item.count;
       });
-    });
       const cards = gsap.utils.toArray('.card');
       cards.forEach((card, i) => {
         gsap.from(card, {
@@ -1218,23 +1228,48 @@ document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a
           ease: "none",
         });
       });
+			      // document.querySelector('.catalog__pagination-pages span').textContent = container.children.length;
+    container.querySelectorAll('.card__inner[data-model-id]').forEach(cardInner => {
+      cardInner.addEventListener('click', function(e) {
+        // Если клик по wish-кнопке — ничего не делаем
+        if (e.target.closest('.card__wish')) return;
+        // Берём id из data-атрибута
+        const modelId = cardInner.getAttribute('data-model-id');
+        window.location.href = `https://admin.rfmodels.ru/website/${modelId}`;
+      });
     });
+      document.querySelectorAll('.catalog__action-letters a').forEach(a => {
+        const letter = a.textContent.trim().toUpperCase();
+        if (!alphabetMap[letter] || alphabetMap[letter] < 16) {
+          a.classList.add('disabled');
+        } else {
+          a.classList.remove('disabled');
+        }
+      });
+    });
+document.querySelectorAll('.catalog__action-letters a').forEach(a => {
+    a.replaceWith(a.cloneNode(true));
+});
+
+document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
+    a.addEventListener('click', e => {
+        container.innerHTML = '';
+        e.preventDefault();
+        currentChar = a.textContent.trim();
+        fetchAndRenderModels();
+    });
+});
+
 }
 
-//жмак по букве
-	document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
-		a.addEventListener('click', e => {
-			container.innerHTML = '';
-			e.preventDefault();
-			currentChar = a.textContent.trim();
-			fetchAndRenderModels();
-		});
-	});
-	
 	// Поиск по имени
 	document.querySelector('.catalog__search').addEventListener('submit', e => {
 		e.preventDefault();
 		currentInput = e.target.querySelector('.catalog__search-input').value.trim();
+		currentCategory = '';
+		currentChar = '';
+		currentPage = 1;
+
 		fetchAndRenderModels();
 	});
 	
@@ -1248,21 +1283,6 @@ document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a
 			fetchAndRenderModels();
 		});
 	});
-	// Клик по переключателю категорий
-	document.querySelectorAll('.catalog__action-categ__item a').forEach(a => {
-		a.addEventListener('click', e => {
-			container.innerHTML = '';
-			e.preventDefault();
-			const text = a.textContent.trim().toLowerCase();
-			if (text === 'new faces') currentCategory = 'new';
-			else if (text === 'mulatto') currentCategory = 'mulatto';
-			else if (text === 'asian') currentCategory = 'asian';
-			else if (text === 'size+') currentCategory = 'plus';
-			else currentCategory = '';
-			currentPage = 1; // reset to first page on filter change
-			fetchAndRenderModels();
-		});
-	});
 	document.querySelector('.catalog__pagination-buttons button').addEventListener('click', e => {
 		e.preventDefault();
 		currentPage++;
@@ -1271,10 +1291,6 @@ document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a
 	// Первая загрузка
 	fetchAndRenderModels();
 	
-
-
-
-
 	/***PAGE ABOUT************************************************* */
 	if ($('.js-faces-scroll').length) {
 		facesSlider[0].autoplay.stop();
