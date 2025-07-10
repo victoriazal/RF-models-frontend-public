@@ -1513,7 +1513,9 @@ function fetchAndRenderModels() {
     fetch(`${api}/show/models?${params}`)
         .then(res => res.json())
         .then(data => {
-            container.innerHTML = '';
+            if (container) {
+        container.innerHTML = '';
+    }
             
             // Обновляем категории в каталоге
             const categoriesContainer = document.querySelector('.catalog__action-categ');
@@ -1529,7 +1531,9 @@ function fetchAndRenderModels() {
                 // Навешиваем обработчики на новые категории
                 categoriesContainer.querySelectorAll('a').forEach(a => {
                     a.addEventListener('click', e => {
-                        container.innerHTML = '';
+                       if (container) {
+        container.innerHTML = '';
+    }
                         e.preventDefault();
                         const text = a.textContent.trim().toLowerCase();
                         
@@ -1574,7 +1578,9 @@ function fetchAndRenderModels() {
                     <div class="card__name"><span>${model.fullname}</span></div>
                     <a href="https://admin.rfmodels.ru/website/${model.id}" class="card__lopen"></a>
                 `;
-                container.appendChild(card);
+								if (container) {
+                      container.appendChild(card);
+    }
             });
             
             // Обработка алфавита
@@ -1598,7 +1604,9 @@ function fetchAndRenderModels() {
 
             document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
                 a.addEventListener('click', e => {
+										if (container) {
                     container.innerHTML = '';
+										}
                     e.preventDefault();
                     currentChar = a.textContent.trim();
                     fetchAndRenderModels();
@@ -1622,14 +1630,14 @@ function fetchAndRenderModels() {
             });
             
             // Обработчики кликов
-            container.querySelectorAll('.card__wish').forEach(wishBtn => {
+            container?.querySelectorAll('.card__wish').forEach(wishBtn => {
                 wishBtn.addEventListener('click', function(e) {
                     likedModel = this.getAttribute('data-model-id');
                     console.log('Liked model ID:', likedModel);
                 });
             });
             
-            container.querySelectorAll('.card__inner[data-model-id]').forEach(cardInner => {
+            container?.querySelectorAll('.card__inner[data-model-id]').forEach(cardInner => {
                 cardInner.addEventListener('click', function(e) {
                     if (e.target.closest('.card__wish')) return;
                     const modelId = cardInner.getAttribute('data-model-id');
@@ -1675,7 +1683,7 @@ if (container) {
     updateFooterCategories();
 }
 	// Поиск по имени
-	document.querySelector('.catalog__search').addEventListener('submit', e => {
+	document.querySelector('.catalog__search')?.addEventListener('submit', e => {
 		e.preventDefault();
 		currentInput = e.target.querySelector('.catalog__search-input').value.trim();
 		currentCategory = '';
@@ -1695,7 +1703,7 @@ if (container) {
 			fetchAndRenderModels();
 		});
 	});
-	document.querySelector('.catalog__pagination-buttons button').addEventListener('click', e => {
+	document.querySelector('.catalog__pagination-buttons button')?.addEventListener('click', e => {
 		e.preventDefault();
 		currentPage++;
 		fetchAndRenderModels();
