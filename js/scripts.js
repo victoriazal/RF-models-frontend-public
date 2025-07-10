@@ -1855,7 +1855,10 @@ $('.popup[data-popup="contact-booker"] form').submit(function(e) {
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMessage = xhr.responseJSON.message;
             }
-            alert(errorMessage);
+           $(form).find('.js-form-error').text(errorMessage).addClass('show');
+						setTimeout(() => {
+								$(form).find('.js-form-error').removeClass('show');
+						}, 2000);
         }
     });
 
