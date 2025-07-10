@@ -1784,7 +1784,7 @@ $('.popup[data-popup="book-model"] form').submit(function(e) {
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMessage = xhr.responseJSON.message;
             }
-            alert(errorMessage);
+            // alert(errorMessage);
         }
     });
 
@@ -1809,19 +1809,28 @@ $('.popup[data-popup="contact-booker"] form').submit(function(e) {
     // Валидация
     if (!fullname) {
         error = true;
-        alert('Please enter your full name');
+				 $(form).find('.js-form-error').text('Please enter your full name').addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 2000);
         return false;
     }
     
     if (!phone || phone.length < 10) {
         error = true;
-        alert('Please enter a valid phone number (minimum 10 digits)');
+        $(form).find('.js-form-error').text('Number must have at least 10 digits').addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 2000);
         return false;
     }
 
     if (!policy) {
         error = true;
-        alert('Please accept the Terms of Service and Privacy Policy');
+				$(form).find('.js-form-error').text('Please accept the Terms of Service and Privacy Policy').addClass('show');
+						setTimeout(() => {
+								$(form).find('.js-form-error').removeClass('show');
+						}, 2000);
         return false;
     }
 
