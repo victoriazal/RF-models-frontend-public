@@ -258,7 +258,7 @@
 
         <section class="ordform section__mg" id="ordform">
             <div class="container">	
-                <form action="" method="post" enctype="multipart/form-data" class="js-form-valid">
+                <form action="" method="post" enctype="multipart/form-data" class="js-model-application-form">
                     <input type="hidden" name="type_form" value="">
                     <div class="ordform__cols">
                         <div class="ordform__head">
@@ -278,10 +278,10 @@
                                 <div class="ordform__frow">
                                     <div class="ordform__flabel"><span>01 /</span> Enter your first name and surname:</div>
                                     <div class="form__row ordform__rinput">
-                                        <input type="text" name="name" class="input input--beige" placeholder="First name" data-required>
+                                        <input type="text" name="first_name" class="input input--beige" placeholder="First name" data-required>
                                     </div>
                                     <div class="form__row ordform__rinput">
-                                        <input type="text" name="surname" class="input input--beige" placeholder="surname" data-required>
+                                        <input type="text" name="last_name" class="input input--beige" placeholder="surname" data-required>
                                     </div>
                                 </div>
                                 <div class="ordform__frow ordform__fcols fcols--inputs w-all">
@@ -300,7 +300,7 @@
                                     <div class="ordform__fcol">
                                         <div class="ordform__flabel"><span>03 /</span>Enter your birthdate:</div>
 
-                                        <input type="tel" name="birthdate" class="input input--beige input--sm mw js-date-mask" placeholder="mm.dd.yyyy">
+                                        <input data-required type="tel" name="birthdate" class="input input--beige input--sm mw js-date-mask" placeholder="mm.dd.yyyy">
                                     </div>
                                 </div>
 
@@ -325,7 +325,7 @@
                                 <div class="ordform__frow">
                                     <div class="ordform__flabel"><span>05 /</span> Enter your place of residence:</div>
                                     <div class="form__row ordform__rinput">
-                                        <input type="text" name="place" class="input input--beige" placeholder="place of residence" data-required>
+                                        <input type="text" name="residence" class="input input--beige" placeholder="place of residence" data-required>
                                     </div>
                                     <div class="form__row ordform__rinput">
                                         <input type="text" name="address" class="input input--beige" placeholder="ADDRESS" data-required>
@@ -346,16 +346,16 @@
                                     <div class="ordform__flabel"><span>06 /</span> Enter body measurements:</div>
                                     <div class="ordform__rinput ordform__ricols">
                                         <div class="form__row">
-                                            <input type="tel" name="height" class="input input--beige js-input-numbers" placeholder="height,  cm">
+                                            <input type="tel" name="height" class="input input--beige js-input-numbers" placeholder="height,  cm" data-required>
                                         </div>    
                                         <div class="form__row">
-                                            <input type="tel" name="bust" class="input input--beige js-input-numbers" placeholder="bust,  cm">
+                                            <input type="tel" name="chest" class="input input--beige js-input-numbers" placeholder="bust,  cm" data-required>
                                         </div>    
                                         <div class="form__row">
-                                            <input type="tel" name="waist" class="input input--beige js-input-numbers" placeholder="waist,  cm">
+                                            <input type="tel" name="waist" class="input input--beige js-input-numbers" placeholder="waist,  cm" data-required>
                                         </div>    
                                         <div class="form__row">
-                                            <input type="tel" name="hips" class="input input--beige js-input-numbers" placeholder="hips,  cm">
+                                            <input type="tel" name="hips" class="input input--beige js-input-numbers" placeholder="hips,  cm" data-required>
                                         </div>   
                                         <div class="form__row hidden" data-type-sex="men">
                                             <input type="tel" name="inseam" class="input input--beige js-input-numbers" placeholder="inseam,  cm">
@@ -363,7 +363,7 @@
                                     </div>
                                     <div class="ordform__rinput mt" data-type-sex="women">
                                         <div class="form__row" data-lenis-prevent>
-                                            <select  name="shoe-size-women" class="js-choice">
+                                            <select  name="shoes" class="js-choice">
                                                 <option value="">choose shoe size</option>
                                                 <option value="35 EU / 5 US / 2.5 UK">35 EU / 5 US / 2.5 UK</option>
                                                 <option value="35.5 EU / 5.5 US / 3.0 UK">35.5 EU / 5.5 US / 3.0 UK</option>
@@ -383,7 +383,7 @@
                                             </select>
                                         </div>
                                         <div class="form__row" data-lenis-prevent>
-                                            <select  name="dress-size" class="js-choice">
+                                            <select  name="dress" class="js-choice">
                                                 <option value="">choose dress size</option>
                                                 <option value="32 EU / 0 US / 4 UK">32 EU / 0 US / 4 UK</option>
                                                 <option value="34 EU / 2 US / 6 UK">34 EU / 2 US / 6 UK</option>
@@ -407,7 +407,7 @@
                                     </div>
                                     <div class="ordform__rinput mt hidden" data-type-sex="men">
                                         <div class="form__row" data-lenis-prevent>
-                                            <select  name="shoe-size-men" class="js-choice">
+                                            <select  name="shoes" class="js-choice">
                                                 <option value="">shoe size</option>
                                                 <option value="39 EU / 6 US / 5.5 UK">39 EU / 6 US / 5.5 UK</option>
                                                 <option value="39.5 EU / 6.5 US / 6 UK">39.5 EU / 6.5 US / 6 UK</option>
@@ -427,7 +427,7 @@
                                             </select>
                                         </div>
                                         <div class="form__row" data-lenis-prevent>
-                                            <select  name="suit-size" class="js-choice">
+                                            <select  name="suit" class="js-choice">
                                                 <option value="">suit size</option>
                                                 <option value="44 EU / 34 US / 34 UK">44 EU / 34 US / 34 UK</option>
                                                 <option value="46 EU / 36 US / 36 UK">46 EU / 36 US / 36 UK</option>
@@ -441,6 +441,7 @@
                                     </div>
                                 </div>
                                 <div class="ordform__buttons">
+                                    <div class="ordform__error js-kviz-step-error">Specify the required information</div>
                                     <button class="btn btn--white btn--wall js-kviz-next" type="button">
                                         <svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#plus"></use></svg>
                                         <span>go to <br> the next step</span>
@@ -453,7 +454,7 @@
                                     <div class="ordform__flabel"><span>07 /</span> Choose appearance traits:</div>
                                     <div class="ordform__rinput">
                                         <div class="form__row" data-lenis-prevent>
-                                            <select  name="hair-colour" class="js-choice">
+                                            <select  name="hair" class="js-choice">
                                                 <option value="">choose hair colour</option>
                                                 <option value="Auburn">Auburn</option>
                                                 <option value="Bald">Bald</option>
@@ -470,7 +471,7 @@
                                             </select>
                                         </div>
                                         <div class="form__row" data-lenis-prevent>
-                                            <select  name="eye-colour" class="js-choice">
+                                            <select  name="eye" class="js-choice">
                                                 <option value="">choose eye colour</option>
                                                 <option value="Blue">Blue</option>
                                                 <option value="Blue green">Blue green</option>
@@ -495,7 +496,7 @@
                                     <div class="ordform__addphotos">
                                         <div class="addphoto js-addphoto active">
                                             <label class="addphoto__upload">
-                                                <input type="file" name="photo[]" accept="image/jpg,image/jpeg,image/png">
+                                                <input type="file" name="snapshots" accept="image/jpg,image/jpeg,image/png">
                                                 <div class="addphoto__error js-addphoto-error"></div>
                                                 <div class="addphoto__error error-hover">Press to replace photo.</div>
                                             </label>
@@ -505,7 +506,7 @@
                                         </div>
                                         <div class="addphoto js-addphoto">
                                             <label class="addphoto__upload">
-                                                <input type="file" name="photo[]" accept="image/jpg,image/jpeg,image/png">
+                                                <input type="file" name="snapshots" accept="image/jpg,image/jpeg,image/png">
                                                 <div class="addphoto__error js-addphoto-error"></div>
                                                 <div class="addphoto__error error-hover">Press to replace photo.</div>
                                             </label>
@@ -515,7 +516,7 @@
                                         </div>
                                         <div class="addphoto js-addphoto">
                                             <label class="addphoto__upload">
-                                                <input type="file" name="photo[]" accept="image/jpg,image/jpeg,image/png">
+                                                <input type="file" name="snapshots" accept="image/jpg,image/jpeg,image/png">
                                                 <div class="addphoto__error js-addphoto-error"></div>
                                                 <div class="addphoto__error error-hover">Press to replace photo.</div>
                                             </label>
@@ -525,7 +526,7 @@
                                         </div>
                                         <div class="addphoto js-addphoto">
                                             <label class="addphoto__upload">
-                                                <input type="file" name="photo[]" accept="image/jpg,image/jpeg,image/png">
+                                                <input type="file" name="snapshots" accept="image/jpg,image/jpeg,image/png">
                                                 <div class="addphoto__error js-addphoto-error"></div>
                                                 <div class="addphoto__error error-hover">Press to replace photo.</div>
                                             </label>
@@ -535,7 +536,7 @@
                                         </div>
                                         <div class="addphoto js-addphoto">
                                             <label class="addphoto__upload">
-                                                <input type="file" name="photo[]" accept="image/jpg,image/jpeg,image/png">
+                                                <input type="file" name="snapshots" accept="image/jpg,image/jpeg,image/png">
                                                 <div class="addphoto__error js-addphoto-error"></div>
                                                 <div class="addphoto__error error-hover">Press to replace photo.</div>
                                             </label>
@@ -567,11 +568,11 @@
                                 <div class="ordform__frow mt--md">
                                     <div class="ordform__flabel"><span>10 /</span> Share your socials:</div>
                                     <div class="form__row ordform__rinput rinput--cols">
-                                        <input type="text" name="insta-link" class="input input--beige" placeholder="paste INSTAGRAM LINK">
+                                        <input type="text" name="instagram" class="input input--beige" placeholder="paste INSTAGRAM LINK">
                                         <button class="ordform__add js-kviz-other-link-add"><svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#add"></use></svg></button>
                                     </div>
-                                    <div class="form__row ordform__rinput hidden js-kviz-other-link">
-                                        <input type="text" name="other-link" class="input input--beige" placeholder="paste OTHER links">
+                                    <div class="form__row ordform__rinput  js-kviz-other-link">
+                                        <input type="text" name="other" class="input input--beige" placeholder="paste OTHER links">
                                     </div>
                                 </div>
 
@@ -818,6 +819,7 @@
 							<svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#plus"></use></svg>
 							<span>submit <br> the form</span>
 						</button>
+                        <div class="ordform__error js-form-error">Specify the required information</div>
 					</div>
 				</div>
 			</form>

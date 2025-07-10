@@ -80,10 +80,10 @@ $(function(){
 		}, 100); 
 	});
 	/**************************************************************
-	FORMS
+	FORMS models selection
 	**************************************************************/
 	function digits_int(target){
-		let val = $(target).val().replace(/[^0-9]/g, '');
+		let val = $(target).val().replace(/[^0-9]/g, ''); 
 		val = val.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 		$(target).val(val);
 	}
@@ -270,17 +270,42 @@ $(function(){
     });
 
 
-    let schedule = form.find('input[name="date"]').val();
-    if (schedule) {
-        const parts = schedule.split('.');
-        if (parts.length === 3) {
-            schedule = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+  let schedule = form.find('input[name="date"]').val();
+if (schedule) {
+    const parts = schedule.split('.');
+    if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        
+        const scheduleDate = new Date(year, month, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        scheduleDate.setHours(0, 0, 0, 0);
+        
+        console.log('schedule', scheduleDate, 'today', today);
+        
+        if (scheduleDate <= today) {
+            $(form).find('.js-form-error').text('The scheduled shoot date better be in the future :)').addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 3000);
+            return false;
         }
+        schedule = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    } else {
+        $(form).find('.js-form-error').text('Invalid date format').addClass('show');
+        setTimeout(() => {
+            $(form).find('.js-form-error').removeClass('show');
+        }, 2000);
+        return false;
     }
-
-    const budget = parseInt(form.find('input[name="budget"]').val().replace(/\s+/g, ''), 10) || null;
-    const phone = form.find('input[name="phone"]').val();
-
+}
+	let budget 
+	if(form.find('input[name="budget"]').length) {
+     budget = parseInt(form.find('input[name="budget"]').val().replace(/\s+/g, ''), 10) || null;
+	}
+    const phone = form.find('input[name="phone"]').val().replace(/\D/g, '');
     // Build the payload
     const payload = {
         woman,
@@ -297,7 +322,7 @@ $(function(){
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(payload),
-        success: function(response) {
+        success: function() {
             window.location.href = 'thank.html';
         },
         error: function(xhr) {
@@ -311,7 +336,157 @@ $(function(){
     return false;
 });
 
-	
+/***Model Application Form************************************************* */
+$('.js-model-application-form').submit(function(e) {
+    e.preventDefault();
+
+    let error = false;
+    const form = $(this);
+
+    // Validate required fields
+    $(form).find('[data-required]').each(function() {
+        if ($(this).attr('type') === 'checkbox' && !$(this).is(':checked')) {
+            error = true;
+        } else if ($(this).attr('type') === 'file') {
+            if (!this.files || this.files.length === 0) {
+                error = true;
+            }
+        } else if ($(this).val() === '') {
+            error = true;
+        }
+    });
+
+    if (error) {
+        $(form).find('.js-form-error').text('Please fill in all required fields').addClass('show');
+        setTimeout(() => {
+            $(form).find('.js-form-error').removeClass('show');
+        }, 2000);
+        return false;
+    }
+
+    // Дополнительная валидация email
+    const email = form.find('input[name="email"]').val().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        $(form).find('.js-form-error').text('Please enter a valid email address').addClass('show');
+        setTimeout(() => {
+            $(form).find('.js-form-error').removeClass('show');
+        }, 2000);
+        return false;
+    }
+
+    // Валидация телефона
+    const phoneRaw = form.find('input[name="phone"]').val().trim();
+    const phone = phoneRaw.replace(/\D/g, ''); // Только цифры
+    if (phone.length < 10) {
+        $(form).find('.js-form-error').text('Phone number must contain at least 10 digits').addClass('show');
+        setTimeout(() => {
+            $(form).find('.js-form-error').removeClass('show');
+        }, 2000);
+        return false;
+    }
+
+    // Создаем FormData для отправки файлов
+    const formData = new FormData(this);
+
+    // Конвертируем дату из dd.mm.yyyy в yyyy-mm-dd
+    const birthdate = formData.get('birthdate');
+    if (birthdate) {
+        const parts = birthdate.split('.');
+        if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            const year = parts[2];
+            formData.set('birthdate', `${year}-${month}-${day}`);
+        }
+    }
+
+    // Исправляем значение пола
+    const sex = formData.get('sex');
+    if (sex === 'women') {
+        formData.set('sex', 'female');
+    } else if (sex === 'men') {
+        formData.set('sex', 'male');
+    }
+
+    // Устанавливаем очищенный телефон (только цифры)
+    formData.set('phone', phone);
+
+    // Устанавливаем проверенный email
+    formData.set('email', email);
+		formData.set('shoes', formData.get('shoes')[0] || null); // Устанавливаем пустую строку, если значение не указано
+    // Обрабатываем пустые значения - заменяем на пустую строку
+    const fieldsToProcess = [
+        'first_name', 'last_name', 'citizenship', 'residence', 'address',
+        'height', 'waist', 'hips', 'shoes', 'eye', 'hair', 
+        'instagram', 'link', 'dress', 'suit'
+    ];
+
+    fieldsToProcess.forEach(field => {
+        const value = formData.get(field);
+        if (!value || value.trim() === '') {
+            formData.delete(field);
+            formData.append(field, ''); // Пустая строка вместо null
+        }
+    });
+
+    // Специальная обработка для bust и chest - всегда отправляем
+    const bustValue = formData.get('bust');
+    if (!bustValue || bustValue.trim() === '') {
+        formData.delete('bust');
+        formData.append('bust', ''); // Пустая строка вместо null
+    }
+
+    const chestValue = formData.get('chest');
+    if (!chestValue || chestValue.trim() === '') {
+        formData.delete('chest');
+        formData.append('chest', ''); // Пустая строка вместо null
+    }
+
+    // Логирование для отладки
+    const formDataObj = {};
+    for (let [key, value] of formData.entries()) {
+        if (formDataObj[key]) {
+            if (!Array.isArray(formDataObj[key])) {
+                formDataObj[key] = [formDataObj[key]];
+            }
+            formDataObj[key].push(value instanceof File ? `[File: ${value.name}]` : value);
+        } else {
+            formDataObj[key] = value instanceof File ? `[File: ${value.name}]` : value;
+        }
+    }
+    console.log('FormData as JSON:', JSON.stringify(formDataObj, null, 2));
+
+    $.ajax({
+        url: `${api}/show/scout`,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function() {
+            window.location.href = 'thank.html';
+        },
+        error: function(xhr) {
+            let errorMessage = 'Submission failed, try again.';
+            
+            // Обработка конкретных ошибок от API
+            if (xhr.responseJSON) {
+                if (xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+            }
+            
+            $(form).find('.js-form-error').text(errorMessage).addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 3000);
+        }
+    });
+
+    return false;
+});
 	// jQuery.validator.addMethod(
 	// 	"phones", 
 	// 	function(value, element) {
@@ -802,6 +977,8 @@ $(function(){
 		// 				error = true;
 		// 		}
 		// 	} 
+		console.log((step_form).find('[data-required]').length);
+		
 		if ($(step_form).find('[data-required]').length)	{
 			$(step_form).find('[data-required]').each(function() {
 				if ($(this).val() == '') {
@@ -852,6 +1029,7 @@ $(function(){
 	/**************************************************************
 	CLICKS
 	**************************************************************/
+	
 	$('.js-gallery-more').click(function(e) {
 		e.preventDefault();
 		// $('.js-gallery-items.hide').eq(0).slideDown(300, function(){
@@ -871,28 +1049,43 @@ $(function(){
 		ScrollTrigger.update;
 	})
 
+	
 
-	function showCategoryCatalog(category, subcategory) {
-		console.log(category);
-		$('.js-category-open').removeClass('active');
-		$('.js-category-open[data-category='+category+']').addClass('active');
-	}
-	$('.js-category-go').click(function(e) {
-		if ($('#catalog').length > 0) {
-			e.preventDefault();
-		
-			$('html, body').stop().animate({
-				scrollTop: $('#catalog').offset().top+50
-			}, 800);
+function showCategoryCatalog(category, subcategory) {
+    console.log(category);
+    $('.js-category-open').removeClass('active');
+    $('.js-category-open[data-category='+category+']').addClass('active');
+    
+    // Обновляем текущий пол и сбрасываем категорию
+    currentGender = category === 'men' ? 'male' : 'female';
+    currentCategory = '';
+    currentChar = '';
+    currentPage = 1;
+    
+    // Очищаем контейнер и загружаем новые данные
+    if (container) {
+        container.innerHTML = '';
+        fetchAndRenderModels();
+    }
+}
 
-			showCategoryCatalog($(this).attr('data-category'));
-		}
-	})
-	$('.js-category-open').click(function(e) {
-		e.preventDefault();
+$('.js-category-go').click(function(e) {
+    if ($('#catalog').length > 0) {
+        e.preventDefault();
+    
+        $('html, body').stop().animate({
+            scrollTop: $('#catalog').offset().top+50
+        }, 800);
 
-		showCategoryCatalog($(this).attr('data-category'));
-	})
+        showCategoryCatalog($(this).attr('data-category'));
+    }
+})
+
+$('.js-category-open').click(function(e) {
+    e.preventDefault();
+
+    showCategoryCatalog($(this).attr('data-category'));
+})
 	
 
 	/***CASES*************************************************/
@@ -1117,151 +1310,370 @@ $(function(){
 	let currentPage = 1;
 let pageSize = 16; 
 let currentCategory = '';
+let likedModel = null;
 
+//footer nav clicks
+// ...existing code...
 
-function fetchAndRenderModels() {
-  fetch(`${api}/show/models/${currentGender==='female' ? 'woman' : 'man'}`)
-    .then(res => res.json())
-    .then(alphabetData => {
-      const alphabetMap = {};
-      alphabetData.forEach(item => {
-        alphabetMap[item.char] = item.count;
-      });
-
-      document.querySelectorAll('.catalog__action-letters a').forEach(a => {
-        const letter = a.textContent.trim().toUpperCase();
-        if (!alphabetMap[letter] || alphabetMap[letter] < 16) {
-          a.classList.add('disabled');
-        } else {
-          a.classList.remove('disabled');
-        }
-      });
-    });
-
-  const params = new URLSearchParams({
-	gender: currentGender,
-	count: pageSize,
-	// char: currentChar,
-	skip: currentPage
-  });
-	if (currentChar) params.append('char', currentChar);
-  if (currentCategory) params.append('category', currentCategory);
-	if (currentInput) params.append('name', currentInput);
-  fetch(`${api}/show/models?${params}`)
-    .then(res => res.json())
-    .then(data => {
-			
-			container.innerHTML = '';
-			      const categoriesContainer = document.querySelector('.catalog__action-categ');
-      if (categoriesContainer && data.categories) {
-        categoriesContainer.innerHTML = '';
-        data.categories.forEach(category => {
-          const categoryItem = document.createElement('div');
-          categoryItem.className = 'catalog__action-categ__item';
-          categoryItem.innerHTML = `<a href="#" class="">${category.title.toUpperCase()}</a>`;
-          categoriesContainer.appendChild(categoryItem);
-        });
-
-        // Навешиваем обработчики на новые категории
-        categoriesContainer.querySelectorAll('a').forEach(a => {
-          a.addEventListener('click', e => {
+// Добавляем обработчики для ссылок в футере
+$('.footer__navitem-link').click(function(e) {
+    e.preventDefault();
+    
+    const categoryText = $(this).attr('data-t').toLowerCase();
+    const parentLabel = $(this).closest('.footer__navitem').find('.footer__navitem-label').text().toLowerCase();
+    
+    // Определяем пол по родительской категории
+    currentGender = parentLabel === 'men' ? 'male' : 'female';
+    
+    // Маппинг категорий (как в форме заказа съемки)
+    const categoriesMap = {
+        'new faces': 'new',
+        'asian': 'asian',
+        'mulatto': 'mulatto',
+        'size+': 'plus'
+    };
+    
+    // Устанавливаем категорию
+    currentCategory = categoriesMap[categoryText] || '';
+    currentChar = '';
+    currentPage = 1;
+    
+    // Обновляем активные кнопки пола
+    $('.js-category-open').removeClass('active');
+    $('.js-category-open[data-category="' + (currentGender === 'male' ? 'men' : 'women') + '"]').addClass('active');
+    
+    // Переходим к каталогу, если он есть на странице
+    if ($('#catalog').length > 0) {
+        $('html, body').stop().animate({
+            scrollTop: $('#catalog').offset().top + 50
+        }, 800);
+        
+        // Очищаем контейнер и загружаем новые данные
+        if (container) {
             container.innerHTML = '';
-            e.preventDefault();
-            const text = a.textContent.trim().toLowerCase();
-            
-            // Находим соответствующую категорию в данных
-            const foundCategory = data.categories.find(cat => 
-              cat.title.toLowerCase() === text
-            );
-            
-            currentCategory = foundCategory ? foundCategory.query : '';
-            currentPage = 1;
             fetchAndRenderModels();
-          });
-        });
-      }
-      data.models.forEach(model => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div class="card__inner" data-model-id="${model.id}">
-            <div class="card__photo">
-              <img src="${mediaApi}/picture/${model.ico}" alt="${model.fullname}">
-            </div>
-            <div class="card__info">
-              <div class="card__params">
-                <div class="card__param"><div class="card__param-label">size</div>${model.measurements?.shoes || '-'}</div>
-                <div class="card__param"><div class="card__param-label">height</div>${model.measurements?.height || '-'}</div>
-                <div class="card__param"><div class="card__param-label">bust</div>${model.measurements?.bust || '-'}</div>
-                <div class="card__param"><div class="card__param-label">waist</div>${model.measurements?.waist || '-'}</div>
-                <div class="card__param"><div class="card__param-label">hips</div>${model.measurements?.hips || '-'}</div>
-              </div>
-                     <div class="card__buttons">
-                <a href="https://admin.rfmodels.ru/website/${model.id}" class="btn btn--md btn--wall">
-                  <svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#plus"></use></svg>
-                  <span>portfolio explore</span>
-                </a>
-              </div>
-              <button class="card__wish" data-open-popup="book-model"></button>
-            </div>
-          </div>
-          <div class="card__name"><span>${model.fullname}</span></div>
-          <a href="https://admin.rfmodels.ru/website/${model.id}" class="card__lopen"></a>
-        `;
-        container.appendChild(card);
-      });
-      const alphabetMap = {};
-      data.alphabet.forEach(item => {
-        alphabetMap[item.char] = item.count;
-      });
-      const cards = gsap.utils.toArray('.card');
-      cards.forEach((card, i) => {
-        gsap.from(card, {
-          scrollTrigger: {
-            trigger: card,
-            start: 'top 100%',
-            end: 'top 60%',
-            scrub: true,
-          },
-          yPercent: (20 + i % 4 * 10),
-          opacity: 0.5,
-          ease: "none",
-        });
-      });
-			      // document.querySelector('.catalog__pagination-pages span').textContent = container.children.length;
-    container.querySelectorAll('.card__inner[data-model-id]').forEach(cardInner => {
-      cardInner.addEventListener('click', function(e) {
-        // Если клик по wish-кнопке — ничего не делаем
-        if (e.target.closest('.card__wish')) return;
-        // Берём id из data-атрибута
-        const modelId = cardInner.getAttribute('data-model-id');
-        window.location.href = `https://admin.rfmodels.ru/website/${modelId}`;
-      });
-    });
-      document.querySelectorAll('.catalog__action-letters a').forEach(a => {
-        const letter = a.textContent.trim().toUpperCase();
-        if (!alphabetMap[letter] || alphabetMap[letter] < 16) {
-          a.classList.add('disabled');
-        } else {
-          a.classList.remove('disabled');
         }
-      });
-    });
-document.querySelectorAll('.catalog__action-letters a').forEach(a => {
-    a.replaceWith(a.cloneNode(true));
+    } else {
+        // Если каталога нет на странице, переходим на главную с параметрами
+        const params = new URLSearchParams({
+            gender: currentGender,
+            category: currentCategory
+        });
+        window.location.href = `/#catalog?${params.toString()}`;
+    }
 });
 
-document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
-    a.addEventListener('click', e => {
-        container.innerHTML = '';
-        e.preventDefault();
-        currentChar = a.textContent.trim();
-        fetchAndRenderModels();
-    });
-});
-
+// Добавляем обработку URL параметров при загрузке страницы
+function handleUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const gender = urlParams.get('gender');
+    const category = urlParams.get('category');
+    
+    if (gender) {
+        currentGender = gender;
+        $('.js-category-open').removeClass('active');
+        $('.js-category-open[data-category="' + (gender === 'male' ? 'men' : 'women') + '"]').addClass('active');
+    }
+    
+    if (category) {
+        currentCategory = category;
+    }
+    
+    // Если есть параметры и есть каталог, прокручиваем к нему
+    if ((gender || category) && $('#catalog').length > 0) {
+        setTimeout(() => {
+            $('html, body').stop().animate({
+                scrollTop: $('#catalog').offset().top + 50
+            }, 800);
+        }, 500);
+    }
 }
 
+// Вызываем обработку параметров после загрузки каталога
+if (container) {
+    handleUrlParams();
+}
+
+// Функция для обновления футера с категориями
+function updateFooterCategories() {
+    // Получаем данные для женщин
+    const womenParams = new URLSearchParams({
+        gender: 'female',
+        count: 1 // Минимальное количество, нам нужны только категории
+    });
+    
+    // Получаем данные для мужчин
+    const menParams = new URLSearchParams({
+        gender: 'male',
+        count: 1
+    });
+    
+    // Загружаем данные для женщин
+    fetch(`${api}/show/models?${womenParams}`)
+        .then(res => res.json())
+        .then(data => {
+            const womenContainer = $('.footer__navitem:contains("women") .footer__navitem-list')[0];
+            if (womenContainer && data.categories) {
+                womenContainer.innerHTML = '';
+                
+                data.categories.forEach(category => {
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'footer__navitem-link';
+                    link.setAttribute('data-t', category.title.toLowerCase());
+                    link.setAttribute('data-query', category.query);
+                    link.textContent = category.title.toLowerCase();
+                    womenContainer.appendChild(link);
+                });
+                
+                // Перенавешиваем обработчики событий
+                attachFooterLinkHandlers();
+            }
+        })
+        .catch(err => console.error('Error loading women categories:', err));
+    
+    // Загружаем данные для мужчин
+    fetch(`${api}/show/models?${menParams}`)
+        .then(res => res.json())
+        .then(data => {
+            const menContainer = $('.footer__navitem:contains("MEN") .footer__navitem-list')[0];
+            if (menContainer && data.categories) {
+                menContainer.innerHTML = '';
+                
+                data.categories.forEach(category => {
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'footer__navitem-link';
+                    link.setAttribute('data-t', category.title.toLowerCase());
+                    link.setAttribute('data-query', category.query);
+                    link.textContent = category.title.toLowerCase();
+                    menContainer.appendChild(link);
+                });
+                
+                // Перенавешиваем обработчики событий
+                attachFooterLinkHandlers();
+            }
+        })
+        .catch(err => console.error('Error loading men categories:', err));
+}
+
+// Функция для навешивания обработчиков на ссылки футера
+function attachFooterLinkHandlers() {
+    $('.footer__navitem-link').off('click').on('click', function(e) {
+        e.preventDefault();
+        
+        const categoryQuery = $(this).attr('data-query') || $(this).attr('data-t').toLowerCase();
+        const parentLabel = $(this).closest('.footer__navitem').find('.footer__navitem-label').text().toLowerCase();
+        
+        // Определяем пол по родительской категории
+        currentGender = parentLabel === 'men' ? 'male' : 'female';
+        
+        // Устанавливаем категорию
+        currentCategory = categoryQuery;
+        currentChar = '';
+        currentPage = 1;
+        
+        // Обновляем активные кнопки пола
+        $('.js-category-open').removeClass('active');
+        $('.js-category-open[data-category="' + (currentGender === 'male' ? 'men' : 'women') + '"]').addClass('active');
+        
+        // Переходим к каталогу, если он есть на странице
+        if ($('#catalog').length > 0) {
+            $('html, body').stop().animate({
+                scrollTop: $('#catalog').offset().top + 50
+            }, 800);
+            
+            // Очищаем контейнер и загружаем новые данные
+            if (container) {
+                container.innerHTML = '';
+                fetchAndRenderModels();
+            }
+        } else {
+            // Если каталога нет на странице, переходим на главную с параметрами
+            const params = new URLSearchParams({
+                gender: currentGender,
+                category: currentCategory
+            });
+            window.location.href = `/#catalog?${params.toString()}`;
+        }
+    });
+}
+
+// Модифицированная функция fetchAndRenderModels
+function fetchAndRenderModels() {
+    const params = new URLSearchParams({
+        gender: currentGender,
+        count: pageSize,
+        skip: currentPage
+    });
+    if (currentChar) params.append('char', currentChar);
+    if (currentCategory) params.append('category', currentCategory);
+    if (currentInput) params.append('name', currentInput);
+    
+    fetch(`${api}/show/models?${params}`)
+        .then(res => res.json())
+        .then(data => {
+            container.innerHTML = '';
+            
+            // Обновляем категории в каталоге
+            const categoriesContainer = document.querySelector('.catalog__action-categ');
+            if (categoriesContainer && data.categories) {
+                categoriesContainer.innerHTML = '';
+                data.categories.forEach(category => {
+                    const categoryItem = document.createElement('div');
+                    categoryItem.className = 'catalog__action-categ__item';
+                    categoryItem.innerHTML = `<a href="#" class="">${category.title.toUpperCase()}</a>`;
+                    categoriesContainer.appendChild(categoryItem);
+                });
+
+                // Навешиваем обработчики на новые категории
+                categoriesContainer.querySelectorAll('a').forEach(a => {
+                    a.addEventListener('click', e => {
+                        container.innerHTML = '';
+                        e.preventDefault();
+                        const text = a.textContent.trim().toLowerCase();
+                        
+                        // Находим соответствующую категорию в данных
+                        const foundCategory = data.categories.find(cat => 
+                            cat.title.toLowerCase() === text
+                        );
+                        
+                        currentCategory = foundCategory ? foundCategory.query : '';
+                        currentPage = 1;
+                        fetchAndRenderModels();
+                    });
+                });
+            }
+            
+            // Отображение моделей
+            data.models.forEach(model => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card__inner" data-model-id="${model.id}">
+                        <div class="card__photo">
+                            <img src="${mediaApi}/picture/${model.ico}" alt="${model.fullname}">
+                        </div>
+                        <div class="card__info">
+                            <div class="card__params">
+                                <div class="card__param"><div class="card__param-label">size</div>${model.measurements?.shoes || '-'}</div>
+                                <div class="card__param"><div class="card__param-label">height</div>${model.measurements?.height || '-'}</div>
+                                <div class="card__param"><div class="card__param-label">bust</div>${model.measurements?.bust || '-'}</div>
+                                <div class="card__param"><div class="card__param-label">waist</div>${model.measurements?.waist || '-'}</div>
+                                <div class="card__param"><div class="card__param-label">hips</div>${model.measurements?.hips || '-'}</div>
+                            </div>
+                            <div class="card__buttons">
+                                <a href="https://admin.rfmodels.ru/website/${model.id}" class="btn btn--md btn--wall">
+                                    <svg class="icon icon--fill"><use xlink:href="images/icons/sprite.svg#plus"></use></svg>
+                                    <span>portfolio explore</span>
+                                </a>
+                            </div>
+                            <button class="card__wish" data-open-popup="book-model" data-model-id="${model.id}"></button>
+                        </div>
+                    </div>
+                    <div class="card__name"><span>${model.fullname}</span></div>
+                    <a href="https://admin.rfmodels.ru/website/${model.id}" class="card__lopen"></a>
+                `;
+                container.appendChild(card);
+            });
+            
+            // Обработка алфавита
+            const alphabetMap = {};
+            data.alphabet.forEach(item => {
+                alphabetMap[item.char] = item.count;
+            });
+            
+            document.querySelectorAll('.catalog__action-letters a').forEach(a => {
+                const letter = a.textContent.trim().toUpperCase();
+                if (!alphabetMap[letter] || alphabetMap[letter] < 16) {
+                    a.classList.add('disabled');
+                } else {
+                    a.classList.remove('disabled');
+                }
+            });
+            
+            document.querySelectorAll('.catalog__action-letters a').forEach(a => {
+                a.replaceWith(a.cloneNode(true));
+            });
+
+            document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a => {
+                a.addEventListener('click', e => {
+                    container.innerHTML = '';
+                    e.preventDefault();
+                    currentChar = a.textContent.trim();
+                    fetchAndRenderModels();
+                });
+            });
+            
+            // GSAP анимации
+            const cards = gsap.utils.toArray('.card');
+            cards.forEach((card, i) => {
+                gsap.from(card, {
+                    scrollTrigger: {
+                        trigger: card,
+                        start: 'top 100%',
+                        end: 'top 60%',
+                        scrub: true,
+                    },
+                    yPercent: (20 + i % 4 * 10),
+                    opacity: 0.5,
+                    ease: "none",
+                });
+            });
+            
+            // Обработчики кликов
+            container.querySelectorAll('.card__wish').forEach(wishBtn => {
+                wishBtn.addEventListener('click', function(e) {
+                    likedModel = this.getAttribute('data-model-id');
+                    console.log('Liked model ID:', likedModel);
+                });
+            });
+            
+            container.querySelectorAll('.card__inner[data-model-id]').forEach(cardInner => {
+                cardInner.addEventListener('click', function(e) {
+                    if (e.target.closest('.card__wish')) return;
+                    const modelId = cardInner.getAttribute('data-model-id');
+                    window.location.href = `https://admin.rfmodels.ru/website/${modelId}`;
+                });
+            });
+        });
+}
+
+// Обработка URL параметров при загрузке страницы
+function handleUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const gender = urlParams.get('gender');
+    const category = urlParams.get('category');
+    
+    if (gender) {
+        currentGender = gender;
+        $('.js-category-open').removeClass('active');
+        $('.js-category-open[data-category="' + (gender === 'male' ? 'men' : 'women') + '"]').addClass('active');
+    }
+    
+    if (category) {
+        currentCategory = category;
+    }
+    
+    // Если есть параметры и есть каталог, прокручиваем к нему
+    if ((gender || category) && $('#catalog').length > 0) {
+        setTimeout(() => {
+            $('html, body').stop().animate({
+                scrollTop: $('#catalog').offset().top + 50
+            }, 800);
+        }, 500);
+    }
+}
+
+// Инициализация каталога
+if (container) {
+    updateFooterCategories();
+    handleUrlParams();
+    fetchAndRenderModels();
+} else {
+    // Если каталога нет на странице, все равно обновляем футер
+    updateFooterCategories();
+}
 	// Поиск по имени
 	document.querySelector('.catalog__search').addEventListener('submit', e => {
 		e.preventDefault();
@@ -1291,6 +1703,148 @@ document.querySelectorAll('.catalog__action-letters a:not(.disabled)').forEach(a
 	// Первая загрузка
 	fetchAndRenderModels();
 	
+
+
+/***Book model************************************************* */
+$('.popup[data-popup="book-model"] form').submit(function(e) {
+    e.preventDefault();
+
+    let error = false;
+    const form = $(this);
+
+    // Validate required fields
+    const fullname = form.find('input[name="name"]').val().trim();
+    const company = form.find('input[name="brand"]').val().trim();
+    const phoneRaw = form.find('input[name="phone"]').val().trim();
+    const policy = form.find('input[name="policy"]').is(':checked');
+
+    // Очищаем телефон от всех символов, кроме цифр
+    const phone = phoneRaw.replace(/\D/g, '');
+
+    // Валидация
+    if (!fullname || !company) {
+        error = true;
+				 $(form).find('.js-form-error').text('Please enter required information').addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 2000);
+        return false;
+    }
+    
+    if (!phone || phone.length < 10) {
+        error = true;
+				 $(form).find('.js-form-error').text('Number must have at least 10 digits').addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 2000);
+        // alert('Please enter a valid phone number (minimum 10 digits)');
+        return false;
+    }
+
+    if (!policy) {
+        error = true;
+				 $(form).find('.js-form-error').text('Please accept the Terms of Service and Privacy Policy').addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 2000);
+        return false;
+    }
+
+    // Build the payload
+    const payload = {
+        fullname: fullname,
+        company: company || "", // Опциональное поле
+        phone: phone, // Только цифры
+        model: likedModel || "string" // ID модели или дефолтное значение
+    };
+
+    $.ajax({
+        url: `${api}/show/connect`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(payload),
+        success: function() {
+            closeModal();
+           window.location.href = 'thank.html';
+        },
+        error: function(xhr) {
+					 $(form).find('.js-form-error').text('Submission failed, try again.').addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 2000);
+            let errorMessage = 'Submission failed, please try again.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            alert(errorMessage);
+        }
+    });
+
+    return false;
+});
+/***Contact booker************************************************* */
+$('.popup[data-popup="contact-booker"] form').submit(function(e) {
+    e.preventDefault();
+
+    let error = false;
+    const form = $(this);
+
+    // Validate required fields
+    const fullname = form.find('input[name="name"]').val().trim();
+    const company = form.find('input[name="brand"]').val().trim();
+    const phoneRaw = form.find('input[name="phone"]').val().trim();
+    const policy = form.find('input[name="policy"]').is(':checked');
+
+    // Очищаем телефон от всех символов, кроме цифр
+    const phone = phoneRaw.replace(/\D/g, '');
+
+    // Валидация
+    if (!fullname) {
+        error = true;
+        alert('Please enter your full name');
+        return false;
+    }
+    
+    if (!phone || phone.length < 10) {
+        error = true;
+        alert('Please enter a valid phone number (minimum 10 digits)');
+        return false;
+    }
+
+    if (!policy) {
+        error = true;
+        alert('Please accept the Terms of Service and Privacy Policy');
+        return false;
+    }
+
+    // Build the payload
+    const payload = {
+        fullname: fullname,
+        company: company || "", // Опциональное поле
+        phone: phone, // Только цифры
+    };
+
+    $.ajax({
+        url: `${api}/show/connect`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(payload),
+        success: function() {
+            closeModal();
+            window.location.href = 'thank.html';
+        },
+        error: function(xhr) {
+            let errorMessage = 'Submission failed, please try again.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            alert(errorMessage);
+        }
+    });
+
+    return false;
+});
+
 	/***PAGE ABOUT************************************************* */
 	if ($('.js-faces-scroll').length) {
 		facesSlider[0].autoplay.stop();
