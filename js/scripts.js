@@ -229,9 +229,11 @@ $(function(){
 		$(addphoto).find('.js-addphoto-error').text('')
 	})
 
-	$('.js-form-valid').submit(function(e) {
+$('.js-form-valid').not('#connect-to-discuss form').submit(function(e) {
     e.preventDefault();
-
+//  if ($(this).closest('.ordform, #connect-to-discuss').length > 0) {
+//         return;
+//     }
     let error = false;
     const form = $(this);
 
@@ -301,11 +303,19 @@ if (schedule) {
         return false;
     }
 }
+
 	let budget 
 	if(form.find('input[name="budget"]').length) {
      budget = parseInt(form.find('input[name="budget"]').val().replace(/\s+/g, ''), 10) || null;
 	}
     const phone = form.find('input[name="phone"]').val().replace(/\D/g, '');
+		  if (phone.length < 10) {
+        $(form).find('.js-form-error').text('Phone number must contain at least 10 digits').addClass('show');
+        setTimeout(() => {
+            $(form).find('.js-form-error').removeClass('show');
+        }, 2000);
+        return false;
+    }
     // Build the payload
     const payload = {
         woman,
@@ -389,7 +399,7 @@ $('.js-model-application-form').submit(function(e) {
     // Создаем FormData для отправки файлов
     const formData = new FormData(this);
 
-    // Конвертируем дату из dd.mm.yyyy в yyyy-mm-dd
+
     const birthdate = formData.get('birthdate');
     if (birthdate) {
         const parts = birthdate.split('.');
@@ -463,6 +473,85 @@ $('.js-model-application-form').submit(function(e) {
         data: formData,
         processData: false,
         contentType: false,
+        success: function() {
+            window.location.href = 'thank.html';
+        },
+        error: function(xhr) {
+            let errorMessage = 'Submission failed, try again.';
+            
+            // Обработка конкретных ошибок от API
+            if (xhr.responseJSON) {
+                if (xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+            }
+            
+            $(form).find('.js-form-error').text(errorMessage).addClass('show');
+            setTimeout(() => {
+                $(form).find('.js-form-error').removeClass('show');
+            }, 3000);
+        }
+    });
+
+    return false;
+});
+/***Send Selection Form - Connect to Discuss************************************************* */
+$('#connect-to-discuss form.js-form-valid').submit(function(e) {
+    e.preventDefault();
+
+    let error = false;
+    const form = $(this);
+
+    // Validate required fields
+    $(form).find('[data-required]').each(function() {
+        if ($(this).attr('type') === 'checkbox' && !$(this).is(':checked')) {
+            error = true;
+        } else if ($(this).val() === '') {
+            error = true;
+        }
+    });
+
+    if (error) {
+        $(form).find('.js-form-error').text('Please fill in all required fields').addClass('show');
+        setTimeout(() => {
+            $(form).find('.js-form-error').removeClass('show');
+        }, 2000);
+        return false;
+    }
+
+    // Валидация телефона
+    const phoneRaw = form.find('input[name="phone"]').val().trim();
+    const phone = phoneRaw.replace(/\D/g, ''); // Только цифры
+    if (phone.length < 10) {
+        $(form).find('.js-form-error').text('Phone number must contain at least 10 digits').addClass('show');
+        setTimeout(() => {
+            $(form).find('.js-form-error').removeClass('show');
+        }, 2000);
+        return false;
+    }
+
+    // Собираем данные формы
+    const fullname = form.find('input[name="name"]').val().trim();
+    const brand = form.find('input[name="brand"]').val().trim();
+    const message = form.find('textarea[name="message"]').val().trim();
+
+    // Build the payload
+    const payload = {
+        fullname: fullname,
+        company: brand,
+        phone: phone, // Только цифры
+        message: message || "", // Опциональное поле
+    };
+
+    console.log('Connect form payload:', payload); // Для отладки
+
+    $.ajax({
+        url: `${api}/show/connect`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(payload),
         success: function() {
             window.location.href = 'thank.html';
         },
